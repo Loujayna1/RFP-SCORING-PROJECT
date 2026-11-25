@@ -1,0 +1,73 @@
+# API framework
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9
+pydantic==2.7.4
+pydantic-settings==2.3.3
+websockets==12.0
+fastapi-limiter==0.1.6
+
+# Groq LLM (key rotation)
+groq==0.9.0
+
+# Embeddings — all-MiniLM-L12-v2 (CPU-only, ~120MB, downloads once)
+sentence-transformers==3.0.1
+torch==2.3.1               # CPU-only build is fine; sentence-transformers pulls it
+torchvision==0.18.1
+
+# Milvus vector database client + sparse BM25 helpers (vector_store.py)
+pymilvus[model]==2.4.4
+milvus-model>=0.1.0
+
+# Document parsers
+docling==2.15.1
+pdfplumber==0.11.2
+openpyxl==3.1.5
+python-docx==1.1.2
+
+# OCR
+pytesseract==0.3.13
+Pillow==10.4.0
+
+# Database
+sqlalchemy==2.0.31
+asyncpg==0.29.0
+alembic==1.13.2
+psycopg2-binary==2.9.9
+pgvector==0.3.2
+
+# Task queue
+celery==5.4.0
+redis==5.0.7
+# kombu must be pinned: celery 5.4.0 allows kombu<6.0, but kombu>=5.6 raised its
+# minimum to redis-py>=6.1.0, which conflicts with the redis==5.0.7 pin above and
+# crashes the worker at startup (kombu.exceptions.VersionMismatch). 5.4.2 is the
+# last line compatible with redis-py 5.x.
+kombu==5.4.2
+
+# PDF generation
+# WeasyPrint 60.x/62.x calls pydyf.PDF() with positional args (old API).
+# pydyf 0.11.0 removed those positional args — anything >= 0.11.0 breaks WeasyPrint < 65.
+# Pin both to a verified compatible pair.
+WeasyPrint==62.3
+pydyf==0.10.0
+jinja2==3.1.2
+
+# Object storage
+boto3==1.34.144
+
+# Auth
+python-jose==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.2.1  # passlib 1.7.x breaks with bcrypt 4.1+ / 5.x
+
+# Utilities
+httpx==0.27.0
+tenacity==8.4.1
+python-dotenv==1.0.1
+tiktoken==0.7.0
+
+# Tests
+pytest==8.3.2
+pytest-asyncio==0.23.8
+marshmallow<4

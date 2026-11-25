@@ -1,0 +1,319 @@
+version: "3.9"
+
+# ── RFP Evaluator — full local dev stack ────────────────────────────────────
+# Services:
+#   milvus-etcd    — Milvus dependency (metadata store)
+#   milvus-minio   — Milvus internal object store (NOT exposed to host)
+#   milvus         — Vector database (port 19530 gRPC, 9091 HTTP)
+#   milvus-attu    — Milvus GUI (port 8080)
+#   postgres       — Main relational DB with pgvector extension
+#   redis          — Celery broker + cache
+#   app-minio      — Application document storage (port 9000/9001)
+#                    NOTE: milvus-minio and app-minio both use port 9000
+#                    internally. milvus-minio does NOT publish to the host.
+#                    Only app-minio is accessible from outside Docker.
+#   backend        — FastAPI app (port 8000)
+#   frontend       — React/Nginx (port 3000)
+#   worker         — Celery worker
+#
+# ENV PRECEDENCE: env_file (./backend/.env) is loaded first; the inline
+# `environment:` block below overrides any matching keys. Put secrets in .env;
+# put service-discovery values (hosts, ports) inline so Docker DNS always wins.
+
+networks:
+  rfp-net:
+    driver: bridge
+
+volumes:
+  etcd_data:
+  milvus_minio_data:
+  postgres_data:
+  app_minio_data:
+  huggingface_cache:
+  frontend_node_modules:
+
+services:
+
+  # ── Milvus dependencies ───────────────────────────────────────────────────
+
+  milvus-etcd:
+    image: quay.io/coreos/etcd:v3.5.14
+    container_name: rfp_milvus_etcd
+    networks: [rfp-net]
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: "1000"
+      ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+      ETCD_SNAPSHOT_COUNT: "50000"
+      ETCD_HEARTBEAT_INTERVAL: "200"
+      ETCD_ELECTION_TIMEOUT: "2000"
+    volumes:
+      - etcd_data:/etcd
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: >
+      etcd
+      --advertise-client-urls=http://milvus-etcd:2379
+      --listen-client-urls=http://0.0.0.0:2379
+      --data-dir=/etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 20s
+
+  milvus-minio:
+    # ISSUE #2 FIX: use MINIO_ROOT_USER / MINIO_ROOT_PASSWORD (renamed in
+    # MinIO releases after mid-2022; the old ACCESS_KEY/SECRET_KEY vars are
+    # silently ignored in this image version).
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    container_name: rfp_milvus_minio
+    networks: [rfp-net]
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - milvus_minio_data:/minio_data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    # Internal only — no ports published to host (see NOTE above)
+    command: minio server /minio_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 20s
+
+  # ── Milvus standalone ─────────────────────────────────────────────────────
+  milvus:
+    image: milvusdb/milvus:v2.4.9
+    container_name: rfp_milvus
+    networks: [rfp-net]
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: milvus-etcd:2379
+      MINIO_ADDRESS: milvus-minio:9000
+      TZ: UTC
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      milvus-etcd:
+        condition: service_healthy
+      milvus-minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      timeout: 20s
+      retries: 15
+      start_period: 120s
+
+  # ── Milvus Attu GUI — http://localhost:8080 ───────────────────────────────
+  milvus-attu:
+    image: zilliz/attu:v2.4
+    container_name: rfp_milvus_attu
+    networks: [rfp-net]
+    environment:
+      MILVUS_URL: milvus:19530
+    ports:
+      - "8080:3000"
+    depends_on:
+      milvus:
+        condition: service_healthy
+
+  # ── PostgreSQL with pgvector ──────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: rfp_postgres
+    networks: [rfp-net]
+    environment:
+      POSTGRES_USER: rfp
+      POSTGRES_PASSWORD: rfp_pass
+      POSTGRES_DB: rfp_evaluator
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rfp -d rfp_evaluator"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: rfp_redis
+    networks: [rfp-net]
+    ports:
+      - "6379:6379"
+    environment:
+      TZ: UTC
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ── MinIO for application documents ──────────────────────────────────────
+  # ISSUE #1 FIX: added healthcheck so backend depends_on can use
+  #               condition: service_healthy instead of racing MinIO startup.
+  # ISSUE #5 FIX: added restart: unless-stopped (was missing).
+  app-minio:
+    image: minio/minio:latest
+    container_name: rfp_app_minio
+    networks: [rfp-net]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      TZ: UTC
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - app_minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── FastAPI backend ───────────────────────────────────────────────────────
+  # ISSUE #1 FIX: added app-minio with condition: service_healthy so the
+  #               backend waits for MinIO before accepting upload requests.
+  # ISSUE #7 NOTE: env_file is loaded first; inline environment: overrides it.
+  #                Service-discovery values (hosts, ports) are always inline.
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rfp_backend
+    networks: [rfp-net]
+    env_file: ./backend/.env
+    environment:
+      MILVUS_HOST: milvus
+      MILVUS_PORT: "19530"
+      DATABASE_URL: postgresql+asyncpg://rfp:rfp_pass@postgres:5432/rfp_evaluator
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT: http://app-minio:9000
+      HF_HOME: /cache/huggingface
+      TRANSFORMERS_CACHE: /cache/huggingface/transformers
+      SENTENCE_TRANSFORMERS_HOME: /cache/sentence-transformers
+      DOCLING_ARTIFACTS_PATH: /opt/docling/models
+      DOCLING_CONVERT_TIMEOUT_SEC: "180"
+      USE_DOCLING: "false"
+      TZ: UTC
+    ports:
+      - "8000:8000"
+    depends_on:
+      milvus:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      # ISSUE #1 FIX: wait for app-minio before starting
+      app-minio:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - huggingface_cache:/cache
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    # ISSUE #8: entrypoint.sh must exist at backend/entrypoint.sh
+    # It should run: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+    entrypoint: ["/bin/bash", "/app/entrypoint.sh"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health >/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # ── React frontend (Vite dev server + bind mount) ─────────────────────────
+  # Source: ./frontend → /app. node_modules in named volume so the host tree
+  # is not shadowed (Windows-friendly). API/WebSocket proxied to `backend`.
+  # For nginx + static build (production image, no bind mount), from repo root:
+  #   docker build -f frontend/Dockerfile -t rfp-frontend:prod ./frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: rfp_frontend
+    networks: [rfp-net]
+    environment:
+      TZ: UTC
+      CHOKIDAR_USEPOLLING: "1"
+      VITE_BACKEND_URL: http://backend:8000
+      VITE_BACKEND_WS_URL: ws://backend:8000
+      VITE_DEV_PORT: "3000"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+
+  # ── Celery worker ─────────────────────────────────────────────────────────
+  # ISSUE #4 FIX: use condition: service_healthy for all three dependencies
+  # so the worker doesn't start while Milvus (120s startup) is still booting.
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rfp_worker
+    networks: [rfp-net]
+    env_file: ./backend/.env
+    environment:
+      MILVUS_HOST: milvus
+      MILVUS_PORT: "19530"
+      DATABASE_URL: postgresql+asyncpg://rfp:rfp_pass@postgres:5432/rfp_evaluator
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT: http://app-minio:9000
+      HF_HOME: /cache/huggingface
+      TRANSFORMERS_CACHE: /cache/huggingface/transformers
+      SENTENCE_TRANSFORMERS_HOME: /cache/sentence-transformers
+      DOCLING_ARTIFACTS_PATH: /opt/docling/models
+      DOCLING_CONVERT_TIMEOUT_SEC: "180"
+      USE_DOCLING: "false"
+      TZ: UTC
+    depends_on:
+      redis:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      app-minio:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - huggingface_cache:/cache
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: celery -A app.worker worker --loglevel=info --concurrency=2
+    restart: unless-stopped

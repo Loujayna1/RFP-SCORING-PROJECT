@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFP Evaluation Report - {{ rfp.title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            background: white;
+            padding: 0;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+
+        /* Header & Footer */
+        header {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 40px 40px;
+            margin-bottom: 30px;
+            border-bottom: 4px solid #991b1b;
+        }
+
+        header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .metadata {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+
+        .metadata-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .metadata-item strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        /* Main Content */
+        main {
+            padding: 0 40px;
+            max-width: 1200px;
+        }
+
+        section {
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 22px;
+            color: #dc2626;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #fee2e2;
+            font-weight: 700;
+        }
+
+        h3 {
+            font-size: 16px;
+            color: #475569;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        table thead {
+            background: #f1f5f9;
+            border-bottom: 2px solid #dc2626;
+        }
+
+        table thead th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        table tbody tr:nth-child(odd) {
+            background: #fafafa;
+        }
+
+        table tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        table tbody td {
+            padding: 12px;
+        }
+
+        /* Score Badges */
+        .score-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 13px;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .score-excellent {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .score-good {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .score-fair {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .score-poor {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Vendor Cards */
+        .vendor-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #dc2626;
+            padding: 20px;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+            border-radius: 4px;
+        }
+
+        .vendor-card h3 {
+            margin-top: 0;
+            color: #1e293b;
+        }
+
+        .vendor-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .vendor-info-item {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #dc2626;
+        }
+
+        .vendor-info-item strong {
+            display: block;
+            color: #475569;
+            margin-bottom: 3px;
+        }
+
+        .vendor-info-item span {
+            color: #1e293b;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Coverage Matrix */
+        .coverage-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .coverage-stat {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .coverage-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #dc2626;
+            margin-bottom: 5px;
+        }
+
+        .coverage-stat-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        /* Compliance Badge */
+        .compliance {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .compliance-full {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .compliance-partial {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .compliance-none {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .compliance-roadmap {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Rankings */
+        .rankings {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .rank-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .rank-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #dc2626;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .rank-item.rank-2 .rank-badge {
+            background: #94a3b8;
+        }
+
+        .rank-item.rank-3 .rank-badge {
+            background: #b45309;
+        }
+
+        .rank-details {
+            flex-grow: 1;
+        }
+
+        .rank-vendor-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .rank-score {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* Section Scores Detail */
+        .section-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .section-score-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .section-score-label {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .section-score-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #dc2626;
+        }
+
+        /* Summary Box */
+        .summary-box {
+            background: #fef2f2;
+            border-left: 4px solid #dc2626;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .summary-box strong {
+            color: #991b1b;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                padding: 0;
+            }
+
+            header {
+                margin-bottom: 20px;
+                padding: 30px;
+            }
+
+            main {
+                padding: 0 30px;
+            }
+
+            .page-break {
+                page-break-after: always;
+            }
+
+            table {
+                page-break-inside: avoid;
+            }
+
+            .vendor-card {
+                page-break-inside: avoid;
+            }
+
+            section {
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Procurement Narrative */
+        .narrative-section {
+            background: #fff7ed;
+            border-left: 4px solid #dc2626;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            border-radius: 4px;
+        }
+        .narrative-summary {
+            font-size: 14px;
+            color: #1e293b;
+            line-height: 1.7;
+            margin-bottom: 0;
+        }
+        .narrative-vendor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+        .narrative-vendor-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 14px;
+        }
+        .narrative-vendor-name {
+            font-weight: 700;
+            font-size: 13px;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+        .narrative-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-top: 8px;
+            margin-bottom: 2px;
+        }
+        .narrative-text {
+            font-size: 12px;
+            color: #334155;
+            line-height: 1.5;
+        }
+        .rec-recommend   { background:#dcfce7; color:#166534; padding:3px 8px; border-radius:3px; font-size:11px; font-weight:600; }
+        .rec-consider    { background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:3px; font-size:11px; font-weight:600; }
+        .rec-do-not      { background:#fee2e2; color:#991b1b; padding:3px 8px; border-radius:3px; font-size:11px; font-weight:600; }
+        .risk-flags-list {
+            margin-top: 14px;
+            padding-left: 18px;
+        }
+        .risk-flags-list li {
+            font-size: 12px;
+            color: #334155;
+            margin-bottom: 4px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ rfp.title }}</h1>
+        <p><strong>RFP Reference:</strong> {{ rfp.rfp_reference or 'N/A' }}</p>
+        <p><strong>Issuing Company:</strong> {{ rfp.issuing_company or 'N/A' }}</p>
+        
+        <div class="metadata">
+            <div class="metadata-item">
+                <strong>Generated:</strong>
+                {{ generated_at }}
+            </div>
+            <div class="metadata-item">
+                <strong>Vendors Evaluated:</strong>
+                {{ vendors|length }}
+            </div>
+            <div class="metadata-item">
+                <strong>Scoring Margin:</strong>
+                ±{{ rfp.scoring_margin }}%
+            </div>
+            <div class="metadata-item">
+                <strong>Requirements:</strong>
+                {{ requirements|length }}
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Executive Summary -->
+        <section>
+            <h2>Executive Summary</h2>
+            
+            <div class="summary-box">
+                <strong>Evaluation Overview</strong>
+                This report presents a comprehensive analysis of {{ vendors|length }} vendor responses to the RFP "{{ rfp.title }}". 
+                Each vendor has been scored against {{ criteria|length }} evaluation criteria based on their alignment with 
+                requirements, technical capabilities, compliance status, and overall fit. The final rankings below reflect 
+                the vendors' relative strengths across all dimensions.
+            </div>
+
+
+            {% if narrative and narrative.executive_summary %}
+            <div class="narrative-section">
+                <strong style="display:block;color:#991b1b;margin-bottom:10px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;">AI-Generated Procurement Assessment</strong>
+                <p class="narrative-summary">{{ narrative.executive_summary }}</p>
+
+                {% if narrative.vendor_summaries %}
+                <div class="narrative-vendor-grid">
+                    {% for vendor_name, assessment in narrative.vendor_summaries.items() %}
+                    <div class="narrative-vendor-card">
+                        <div class="narrative-vendor-name">{{ vendor_name }}</div>
+                        {% if assessment.recommendation == 'Recommend' %}
+                            <span class="rec-recommend">&#10003; Recommend</span>
+                        {% elif assessment.recommendation == 'Consider' %}
+                            <span class="rec-consider">&#9679; Consider</span>
+                        {% else %}
+                            <span class="rec-do-not">&#10007; Do not recommend</span>
+                        {% endif %}
+                        <div class="narrative-label">Strengths</div>
+                        <div class="narrative-text">{{ assessment.strengths }}</div>
+                        <div class="narrative-label">Concerns</div>
+                        <div class="narrative-text">{{ assessment.concerns }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if narrative.risk_flags %}
+                <div class="narrative-label" style="margin-top:16px;">Risk flags</div>
+                <ul class="risk-flags-list">
+                    {% for flag in narrative.risk_flags %}
+                    <li>{{ flag }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Final Rankings -->
+            <h3>Final Rankings</h3>
+            <div class="rankings">
+                {% for vendor, rank, score in rankings %}
+                <div class="rank-item rank-{{ rank }}">
+                    <div class="rank-badge">{{ rank }}</div>
+                    <div class="rank-details">
+                        <div class="rank-vendor-name">{{ vendor.vendor_name }}</div>
+                        <div class="rank-score">
+                            Total Score: 
+                            <strong class="score-badge score-excellent">{{ "%.2f" | format(score.total_score) }}</strong> / 5.0
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Vendor Comparison Scorecard -->
+        <section class="page-break">
+            <h2>Vendor Comparison Scorecard</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vendor</th>
+                        <th>Total Score</th>
+                        <th>Rank</th>
+                        {% for criterion in criteria %}
+                        <th>{{ criterion.label }}</th>
+                        {% endfor %}
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vendor, rank, score in rankings %}
+                    <tr>
+                        <td><strong>{{ vendor.vendor_name }}</strong></td>
+                        <td>
+                            {% if score.total_score >= 4 %}
+                                <span class="score-badge score-excellent">{{ "%.2f" | format(score.total_score) }}</span>
+                            {% elif score.total_score >= 3 %}
+                                <span class="score-badge score-good">{{ "%.2f" | format(score.total_score) }}</span>
+                            {% elif score.total_score >= 2 %}
+                                <span class="score-badge score-fair">{{ "%.2f" | format(score.total_score) }}</span>
+                            {% else %}
+                                <span class="score-badge score-poor">{{ "%.2f" | format(score.total_score) }}</span>
+                            {% endif %}
+                        </td>
+                        <td>#{{ rank }}</td>
+                        {% for criterion in criteria %}
+                        <td>
+                            {% set crit_score = score.section_scores.get(criterion.label, 0) %}
+                            {% if crit_score >= 4 %}
+                                <span class="score-badge score-excellent">{{ "%.1f" | format(crit_score) }}</span>
+                            {% elif crit_score >= 3 %}
+                                <span class="score-badge score-good">{{ "%.1f" | format(crit_score) }}</span>
+                            {% elif crit_score >= 2 %}
+                                <span class="score-badge score-fair">{{ "%.1f" | format(crit_score) }}</span>
+                            {% else %}
+                                <span class="score-badge score-poor">{{ "%.1f" | format(crit_score) }}</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td>
+                            <span class="compliance compliance-full">Evaluated</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Detailed Vendor Analysis -->
+        {% for vendor, rank, score in rankings %}
+        <section class="page-break">
+            <h2>#{{ rank }} — {{ vendor.vendor_name }}</h2>
+            
+            <div class="vendor-card">
+                <h3>Overall Assessment</h3>
+                
+                <div class="coverage-summary">
+                    <div class="coverage-stat">
+                        <div class="coverage-stat-value">{{ "%.2f" | format(score.total_score) }}</div>
+                        <div class="coverage-stat-label">Total Score</div>
+                    </div>
+                    <div class="coverage-stat">
+                        <div class="coverage-stat-value">#{{ rank }}</div>
+                        <div class="coverage-stat-label">Ranking</div>
+                    </div>
+                    <div class="coverage-stat">
+                        <div class="coverage-stat-value">{{ vendor_coverage.get(vendor.vendor_id, {}).get('covered', 0) }}</div>
+                        <div class="coverage-stat-label">Requirements Covered</div>
+                    </div>
+                    <div class="coverage-stat">
+                        <div class="coverage-stat-value">{{ vendor_coverage.get(vendor.vendor_id, {}).get('gaps', 0) }}</div>
+                        <div class="coverage-stat-label">Gaps Identified</div>
+                    </div>
+                </div>
+
+                <h3>Section Scores</h3>
+                <div class="section-scores">
+                    {% for criterion in criteria %}
+                    {% set crit_score = score.section_scores.get(criterion.label, 0) %}
+                    <div class="section-score-item">
+                        <div class="section-score-label">{{ criterion.label }}</div>
+                        <div class="section-score-value">{{ "%.1f" | format(crit_score) }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <h3>Compliance Summary</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Requirement</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Justification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req_score in requirement_scores.get(vendor.response_id, [])[:10] %}
+                        <tr>
+                            <td>{{ req_score.description[:60] }}{% if req_score.description|length > 60 %}…{% endif %}</td>
+                            <td>{{ req_score.category }}</td>
+                            <td>
+                                {% if req_score.compliance_level == 'FullyCompliant' %}
+                                    <span class="compliance compliance-full">Fully Compliant</span>
+                                {% elif req_score.compliance_level == 'PartiallyCompliant' %}
+                                    <span class="compliance compliance-partial">Partial</span>
+                                {% elif req_score.compliance_level == 'RoadmapCompliant' %}
+                                    <span class="compliance compliance-roadmap">Roadmap</span>
+                                {% else %}
+                                    <span class="compliance compliance-none">Non-Compliant</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req_score.justification[:80] }}{% if req_score.justification|length > 80 %}…{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endfor %}
+
+        <!-- Evaluation Criteria Reference -->
+        <section class="page-break">
+            <h2>Evaluation Criteria Reference</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Criterion</th>
+                        <th>Section</th>
+                        <th>Weight</th>
+                        <th>Max Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for criterion in criteria %}
+                    <tr>
+                        <td>{{ criterion.label }}</td>
+                        <td>{{ criterion.section }}</td>
+                        <td>{{ "%.1f" | format(criterion.weight) }}%</td>
+                        <td>{{ criterion.max_score }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3>Scoring Scale</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Score Range</th>
+                        <th>Rating</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>4.0 - 5.0</td>
+                        <td><span class="score-badge score-excellent">Excellent</span></td>
+                        <td>Exceeds requirements; strong fit for the RFP</td>
+                    </tr>
+                    <tr>
+                        <td>3.0 - 3.9</td>
+                        <td><span class="score-badge score-good">Good</span></td>
+                        <td>Meets requirements; solid fit with minor gaps</td>
+                    </tr>
+                    <tr>
+                        <td>2.0 - 2.9</td>
+                        <td><span class="score-badge score-fair">Fair</span></td>
+                        <td>Partially meets requirements; notable gaps</td>
+                    </tr>
+                    <tr>
+                        <td>0.0 - 1.9</td>
+                        <td><span class="score-badge score-poor">Poor</span></td>
+                        <td>Does not meet requirements; significant gaps</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Methodology -->
+        <section>
+            <h2>Evaluation Methodology</h2>
+            
+            <h3>Scoring Approach</h3>
+            <p>
+                This evaluation employed a comprehensive, multi-criteria scoring methodology:
+            </p>
+            <ul>
+                <li><strong>Requirement Coverage:</strong> Each vendor response was analyzed for completeness against all RFP requirements</li>
+                <li><strong>Criterion Alignment:</strong> Responses were scored against {{ criteria|length }} evaluation criteria on a 0-5 scale</li>
+                <li><strong>Weighted Calculation:</strong> Section scores were weighted according to their relative importance</li>
+                <li><strong>Scoring Margin:</strong> A ±{{ rfp.scoring_margin }}% margin was applied to account for assessment variance</li>
+                <li><strong>Compliance Assessment:</strong> Each requirement was classified as Fully Compliant, Partially Compliant, Roadmap Compliant, or Non-Compliant</li>
+            </ul>
+
+            <h3>Data Sources</h3>
+            <ul>
+                <li>RFP Document: {{ rfp.title }}</li>
+                <li>Vendor Response Documents (Proposals, Technical Specifications, SOWs)</li>
+                <li>Evaluation Criteria Matrix ({{ criteria|length }} criteria across {{ rfp.requirement_count }} requirements)</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>RFP Evaluation Report — Confidential</p>
+        <p>Generated on {{ generated_at }} | Document ID: {{ report_id }}</p>
+    </footer>
+</body>
+</html>

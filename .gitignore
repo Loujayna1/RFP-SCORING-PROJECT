@@ -1,0 +1,29 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+backend/.env
+*.env.local
+frontend/node_modules/
+frontend/dist/
+postgres_data/
+app_minio_data/
+milvus_minio_data/
+etcd_data/
+.cache/
+.vscode/
+.idea/
+*.swp
+
+# Database dumps — contain uploaded document text + password hashes
+*.sql
+# Evaluation outputs
+backend/results/
+# Loose archives / diffs (kept locally, never pushed)
+*.zip
+*.diff
+# pip typo artifact
+backend/=3.9.1
+# BM25 index models — runtime build artifacts; contain document-derived vocabulary
+backend/app/services/bm25_models/

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Compliance Certificate — {{ rfp.title }}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Georgia", serif;
+    color: #1e293b;
+    background: white;
+    padding: 60px 80px;
+    min-height: 100vh;
+  }
+  .border-frame {
+    border: 6px double #dc2626;
+    padding: 50px 60px;
+    min-height: calc(100vh - 120px);
+    position: relative;
+  }
+  .corner {
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: #dc2626;
+    border-style: solid;
+  }
+  .corner-tl { top: 8px; left: 8px;  border-width: 3px 0 0 3px; }
+  .corner-tr { top: 8px; right: 8px; border-width: 3px 3px 0 0; }
+  .corner-bl { bottom: 8px; left: 8px;  border-width: 0 0 3px 3px; }
+  .corner-br { bottom: 8px; right: 8px; border-width: 0 3px 3px 0; }
+
+  .logo-row {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  .logo-text {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #dc2626;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .cert-title {
+    text-align: center;
+    font-size: 34px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    color: #1e293b;
+    margin-bottom: 6px;
+  }
+  .cert-subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .divider {
+    border: none;
+    border-top: 1px solid #dc2626;
+    margin: 24px 0;
+  }
+  .body-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #334155;
+    margin-bottom: 20px;
+    text-align: justify;
+  }
+  .highlight {
+    color: #dc2626;
+    font-weight: bold;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 28px 0;
+  }
+  .info-item {
+    background: #f8fafc;
+    border-left: 3px solid #dc2626;
+    padding: 12px 16px;
+  }
+  .info-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #94a3b8;
+    font-family: "Segoe UI", sans-serif;
+    margin-bottom: 4px;
+  }
+  .info-value {
+    font-size: 14px;
+    color: #1e293b;
+    font-weight: 600;
+  }
+  .process-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13px;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .process-table th {
+    background: #1e293b;
+    color: white;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .process-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+  }
+  .process-table tr:nth-child(even) td { background: #f8fafc; }
+  .evaluators-list {
+    margin: 16px 0;
+    font-size: 13px;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .evaluator-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .eval-dot { width: 6px; height: 6px; border-radius: 50%; background: #dc2626; flex-shrink: 0; }
+  .eval-name { color: #1e293b; font-weight: 500; }
+  .eval-role { color: #94a3b8; font-size: 11px; margin-left: auto; text-transform: capitalize; }
+  .signature-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 50px;
+  }
+  .sig-line {
+    border-top: 1px solid #1e293b;
+    padding-top: 8px;
+    font-size: 11px;
+    color: #64748b;
+    font-family: "Segoe UI", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .cert-id {
+    position: absolute;
+    bottom: 24px;
+    right: 30px;
+    font-size: 9px;
+    color: #cbd5e1;
+    font-family: monospace;
+  }
+  .winner-badge {
+    text-align: center;
+    margin: 20px 0;
+    padding: 16px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 2px solid #f59e0b;
+    border-radius: 4px;
+  }
+  .winner-label { font-size: 11px; color: #92400e; text-transform: uppercase; letter-spacing: 0.1em; font-family: "Segoe UI", sans-serif; }
+  .winner-name  { font-size: 22px; font-weight: bold; color: #78350f; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="border-frame">
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <div class="logo-row">
+    <div class="logo-text">RFP Evaluator Platform · Procurement Compliance</div>
+  </div>
+
+  <div class="cert-title">CERTIFICATE OF COMPLIANCE</div>
+  <div class="cert-subtitle">Procurement Evaluation Process</div>
+  <hr class="divider">
+
+  <p class="body-text">
+    This certificate attests that the procurement evaluation process for
+    <span class="highlight">{{ rfp.title }}</span>
+    was conducted in full compliance with the platform's four-phase evaluation framework,
+    including AI-assisted scoring, independent human evaluation, consensus review, and
+    a formally declared award decision.
+  </p>
+
+  <div class="info-grid">
+    <div class="info-item">
+      <div class="info-label">RFP Reference</div>
+      <div class="info-value">{{ rfp.rfp_reference or rfp.rfp_id[:8].upper() }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Issuing Organisation</div>
+      <div class="info-value">{{ rfp.issuing_company or 'Not specified' }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Criteria Locked</div>
+      <div class="info-value">{{ rfp.rubric_locked_at.strftime('%d %b %Y') if rfp.rubric_locked_at else 'N/A' }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Decision Finalised</div>
+      <div class="info-value">{{ rfp.locked_at.strftime('%d %b %Y') if rfp.locked_at else 'N/A' }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Vendors Evaluated</div>
+      <div class="info-value">{{ vendor_count }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Evaluators Participated</div>
+      <div class="info-value">{{ assignments|length }}</div>
+    </div>
+  </div>
+
+  {% if winner %}
+  <div class="winner-badge">
+    <div class="winner-label">&#9733; Award Decision</div>
+    <div class="winner-name">{{ winner.name }}</div>
+  </div>
+  {% endif %}
+
+  <hr class="divider">
+
+  <p class="body-text" style="font-size:13px;">
+    <strong>Key process milestones:</strong>
+  </p>
+  <table class="process-table">
+    <thead>
+      <tr><th>Event</th><th>Date / Time (UTC)</th></tr>
+    </thead>
+    <tbody>
+      {% for event in key_events %}
+      <tr>
+        <td>{{ event.action.replace('_', ' ').title() }}</td>
+        <td>{{ event.created_at.strftime('%d %b %Y %H:%M') if event.created_at else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <p class="body-text" style="font-size:13px;"><strong>Evaluation panel:</strong></p>
+  <div class="evaluators-list">
+    {% for assignment, user in assignments %}
+    <div class="evaluator-row">
+      <div class="eval-dot"></div>
+      <div class="eval-name">{{ user.display_name or user.email }}</div>
+      <div class="eval-role">{{ assignment.evaluator_role.replace('_', ' ') }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="signature-row">
+    <div>
+      <div style="height:40px;"></div>
+      <div class="sig-line">Authorised signatory — Procurement Lead</div>
+    </div>
+    <div>
+      <div style="height:40px;"></div>
+      <div class="sig-line">System-generated — {{ generated_at }}</div>
+    </div>
+  </div>
+
+  <div class="cert-id">CERT-{{ certificate_id }} · {{ rfp.rfp_id }}</div>
+</div>
+</body>
+</html>
